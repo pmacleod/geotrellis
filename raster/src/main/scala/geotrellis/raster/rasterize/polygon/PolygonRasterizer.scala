@@ -318,11 +318,16 @@ object PolygonRasterizer {
           )}
       })
 
-    interactions
+    interactions.map { edge: Segment =>
+      val topX = lineAxisIntersection(edge, top)._1
+      val bottomX = lineAxisIntersection(edge, bot)._1
+      val sortX = if (topX != Double.NegativeInfinity) topX
+      else if (bottomX != Double.NegativeInfinity) bottomX
+      else edge._1
+      (sortX, topX, bottomX, edge)
+    }
       .sortWith(_._1 < _._1)
-      .foreach({ edge =>
-        val topIntervalX = lineAxisIntersection(edge, top)._1
-        val botIntervalX = lineAxisIntersection(edge, bot)._1
+      .foreach({ case (_: Double, topIntervalX: Double, botIntervalX: Double, edge: Segment) =>
         val touchesTop = (topIntervalX != Double.NegativeInfinity)
         val touchesBot = (botIntervalX != Double.NegativeInfinity)
 
@@ -342,7 +347,6 @@ object PolygonRasterizer {
 
           val smallerX = min(firstX, secondX)
           val largerX = max(firstX, secondX)
-
           intervals += ((floor(smallerX), ceil(largerX)))
         }
 
@@ -390,7 +394,6 @@ object PolygonRasterizer {
         if (!partial && (!touchesTop || !touchesBot))
           midIntervals += ((math.floor(edge._1), math.ceil(edge._3)))
       })
-
     if (partial)
       mergeIntervals(intervals.sortWith(_._1 < _._1))
     else {
